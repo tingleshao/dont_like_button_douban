@@ -12,7 +12,7 @@ var guessList = document.getElementsByClassName('guess3-list')[0].childNodes;
 
 var DL_list_s = GM_getValue("DL_list");
 if (typeof DL_list_s === "undefined") {
-    alert("ddl");
+// have nothing in the DL_list_s
     DL_list = [];
 }
 else 
