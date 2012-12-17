@@ -2,79 +2,65 @@
 // @name                unlike button for douban
 // @namespace           tingleshao
 // @description         add unlike buttons for douban front page
-// @include             http://www.douban.com/
-// @version             1.1
+// @include             http://www.douban.com/*
+// @exclude             http://www.douban.com/*/*
+// @version             1.2
 // ==/UserScript==
 
-var guessList = document.getElementsByClassName('guess3-list')[0].childNodes;
+// @include & @exclude make the script works only for the front page.
 
-// close previous saved dont-like guess list
+(function () {
+    var guess_list = document.getElementsByClassName('guess-item');
+    var DL_list = [];
 
-var DL_list_s = GM_getValue("DL_list");
-if (typeof DL_list_s === "undefined") {
-// have nothing in the DL_list_s
-    DL_list = [];
-}
-else 
-    DL_list = DL_list_s.split('&');
-
-for (var i = 1; i < guessList.length-1; i=i+2) {
-    for (var j = 0; j < DL_list.length; j=j+1) {
-        if (DL_list[j] == document.getElementsByClassName('guess3-list')[0].childNodes[i].getAttribute('unique_id')) {
-            document.getElementsByClassName('guess3-list')[0].childNodes[i].style.display = 'none';
-        }    
+    // restore DL_list
+    var DL_list_str = GM_getValue('DL_list');
+    if (DL_list_str) {
+        DL_list = DL_list_str.split('&');
     }
-    var closeButton = document.createElement("cb");
-    closeButton.id = "close_button" + i.toString();
-    closeButton.href = "javascript";
-    closeButton.innerText = "不喜欢";
-    closeButton.innerHTML = "不喜欢";
-    var style = '\
-       #close_button& {\
-          zoom: 1;\
-          width: 3em;\
-          padding: 5px 10px;\
-          line-height: 1.2;\
-          text-align: center;\
-          -webkit-border-radius: 2px;\
-          -moz-border-radius: 2px;\
-          -o-border-radius: 2px;\
-          border-radius: 2px;\
-          width:24px;\
-          color: #CA6445;\
-          background: #FAE9DA;\
-          cursor: pointer;\
-     	}\
-     '
-    style = style.replace('&',i.toString());
-    GM_addStyle(style);
-    document.getElementsByClassName('guess3-list')[0].childNodes[i].appendChild(closeButton);
-}
 
-function closeGuess(id){
-    var i = parseInt(id.split('n')[1]);
-	document.getElementsByClassName('guess3-list')[0].childNodes[i].style.display = 'none';   
-    DL_list.push(document.getElementsByClassName('guess3-list')[0].childNodes[i].getAttribute('unique_id'));
-    if (DL_list.length > 20)
-        DL_list = DL_list.slice(1,DL_list.length);
-    new_DL_list_s = ""
-    for (var i = 0; i < DL_list.length; i++) {
-        new_DL_list_s = new_DL_list_s + DL_list[i];
-        new_DL_list_s = new_DL_list_s + '&';
+    // start working
+    for (var i = 0; i < guess_list.length; i++) {
+        var guess_item = guess_list[i];
+
+        // hide if necessary
+        var unique_id = guess_item.getAttribute('unique_id');
+        for (var j = 0; j < DL_list.length; j++) {
+            if (DL_list[j] == unique_id) {
+                guess_item.style.display = 'none';
+            }
+        }
+
+        // add dislike button
+        var ft = undefined;
+        for (var j = 0; j < guess_item.children.length; j++) {
+            var child_node = guess_item.children[j];
+            if (child_node.className == 'ft') {
+                ft = child_node;
+                break;
+            }
+        }
+        if (ft) {
+            var btn = document.createElement('span');
+            var btn_link = document.createElement('a');
+            btn.appendChild(btn_link);
+            
+            btn.className = 'usr-btn fav-btn';
+            btn_link.href = 'javascript:void(0);';
+            btn_link.innerText = '不喜欢';
+            btn_link.unique_id = guess_item.getAttribute('unique_id');
+            btn_link.addEventListener('click', function () {
+                var guess_item = this.parentNode.parentNode.parentNode;
+                guess_item.style.display = 'none';
+                
+                DL_list.push(this.unique_id);
+                if (DL_list.length > 30) {
+                    DL_list = DL_list.slice(1);
+                }
+                GM_setValue('DL_list', DL_list.join('&'));
+            });
+
+            ft.appendChild(btn);
+        }
     }
-    GM_setValue("DL_list",new_DL_list_s);
-}
-
-for (var i = 1; i < guessList.length-1; i=i+2) {
-    cbb = document.getElementById("close_button"+i.toString());
-    cbb.addEventListener("click",function(){closeGuess(this.id)}, false);
-}
-
-
-
-
-
-
-
-
-
+}) ();
